@@ -97,7 +97,7 @@ function RealFabric() {
   });
 
   return (
-    <meshStandardMaterial 
+    <meshPhysicalMaterial 
       {...props} 
       roughness={1.0} 
       sheen={1.0} 
@@ -135,7 +135,7 @@ function Scene({ materialIndex }: { materialIndex: number }) {
         {materialIndex === 4 && <RealFabric />}
       </TorusKnot>
 
-      <EffectComposer disableNormalPass>
+      <EffectComposer enableNormalPass={false}>
         <Bloom 
           luminanceThreshold={0.7} 
           mipmapBlur 

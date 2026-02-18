@@ -16,7 +16,7 @@ export function ThemeSwitch() {
   // 랜덤 테마 선택 로직
   const handleRandomTheme = () => {
     // 현재 테마를 제외한 나머지 테마들
-    const otherThemes = availableThemes.filter(t => t !== 'MoreComingSoon' && t !== currentTheme);
+    const otherThemes = availableThemes.filter(t => t !== currentTheme);
     
     if (otherThemes.length === 0) return; // 바꿀 테마가 없으면 종료
 

@@ -7,7 +7,9 @@ import { FallingText } from '@/components/themes/FallingText';
 import { FallingShapes } from '@/components/themes/FallingShapes'; // 추가
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ... (생략)
+interface ThemeRendererProps {
+  links: LinkItem[];
+}
 
 export function ThemeRenderer({ links }: ThemeRendererProps) {
   const { currentTheme } = useTheme();
