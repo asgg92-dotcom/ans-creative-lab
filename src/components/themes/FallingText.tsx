@@ -36,7 +36,7 @@ export function FallingText({ links }: FallingTextProps) {
     const world = engine.world;
     engineRef.current = engine;
 
-    // 중력 약간 강화 (기본값 1 -> 1.5로 조정)
+    // 중력 약간 강화
     engine.gravity.y = 1.5;
 
     const render = Render.create({
@@ -84,21 +84,20 @@ export function FallingText({ links }: FallingTextProps) {
     const textBodies: Matter.Body[] = [];
 
     links.forEach((link, index) => {
-      // 너비 계산 타이트하게 수정
-      // 영문 기준 글자당 약 60~70px, 패딩 40px
+      // [롤백] 기존 물리 엔진 설정값 복구
+      // 영문 기준 글자당 약 70px, 패딩 40px
       const charWidth = 70;
       const padding = 40;
       const width = link.title.length * charWidth + padding; 
-      const height = 140; // 높이도 약간 줄임
+      const height = 140; 
       
       const x = Math.random() * (window.innerWidth - width) + width / 2;
-      // 낙하 높이를 -2000까지 늘려서 랜덤 순서(시차) 확보
       const y = -Math.random() * 2000 - 200;
 
       const body = Bodies.rectangle(x, y, width, height, {
         restitution: 0.5,
         friction: 0.1,
-        frictionAir: 0.01, // 공기 저항 조정 (0.005 -> 0.01)
+        frictionAir: 0.01,
         angle: (Math.random() - 0.5) * 0.5,
         label: index.toString(),
       });
@@ -175,7 +174,8 @@ export function FallingText({ links }: FallingTextProps) {
 
       {links.map((link, index) => {
         const hoverColor = HOVER_COLORS[index % HOVER_COLORS.length];
-        const estimatedWidth = link.title.length * 70 + 40; // 물리 엔진과 싱크
+        // [롤백] 기존 렌더링 설정값 복구
+        const estimatedWidth = link.title.length * 70 + 40;
 
         return (
           <a
@@ -197,10 +197,10 @@ export function FallingText({ links }: FallingTextProps) {
               e.currentTarget.style.color = hoverColor;
             }}
             onMouseLeave={(e) => {
-              // 원래 색상으로 복구 (다크모드 고려)
               e.currentTarget.style.color = ''; 
             }}
           >
+            {/* [롤백] 폰트 크기 복구 */}
             <h3 className="text-[5rem] md:text-[8rem] font-black tracking-tighter leading-none text-center w-full whitespace-nowrap">
               {link.title}
             </h3>
