@@ -116,8 +116,6 @@ export default function ProjectBeta() {
       zoom: 0.8, // [복구] 원래 줌 값 (0.8)
       dragRotate: true,
       rotate: { x: -Zdog.TAU / 12 }, 
-      onDragStart: function() { this.isDragging = true; },
-      onDragEnd: function() { this.isDragging = false; },
     });
     illoRef.current = illo;
 
