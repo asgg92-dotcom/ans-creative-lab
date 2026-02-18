@@ -70,7 +70,7 @@ export default function ProjectBeta() {
   // Screen Positions
   const screenPositions = useRef<{ [key: string]: { x: number, y: number } }>({});
 
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number>(0);
   const mouseRef = useRef({ x: 0, y: 0 });
   const timeRef = useRef(0);
 
