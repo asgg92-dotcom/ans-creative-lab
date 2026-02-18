@@ -430,9 +430,9 @@ export default function ProjectBeta() {
       // 4-3. Radio Bounce
       if (radioBodyRef.current && isPlayingRef.current) {
           const scale = 1 + Math.sin(time * 15) * 0.1;
-          radioBodyRef.current.scale = { x: scale, y: scale, z: scale }; 
+          radioBodyRef.current.scale = { x: scale, y: scale, z: scale } as any; 
       } else if (radioBodyRef.current) {
-          radioBodyRef.current.scale = { x: 1, y: 1, z: 1 };
+          radioBodyRef.current.scale = { x: 1, y: 1, z: 1 } as any;
       }
 
       // 4-4. Steam
@@ -509,7 +509,7 @@ export default function ProjectBeta() {
           width: 15, height: 8, stroke: 2,
           color: isNight ? PALETTE.night.plant : PALETTE.day.plant,
           fill: true, translate: { y: yPos, x: 5 * angle }, rotate: { z: -0.5 * angle },
-          scale: { x: 0, y: 0, z: 0 }, // 초기값 0
+          scale: { x: 0, y: 0, z: 0 } as any, // 초기값 0
       });
       
       // GSAP Animation Fix
