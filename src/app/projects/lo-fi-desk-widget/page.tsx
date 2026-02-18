@@ -281,7 +281,7 @@ export default function ProjectBeta() {
             translate: { y: -50 - (i*15) },
             rotate: { y: Zdog.TAU/4 },
             opacity: 0,
-        });
+        } as any);
         steamsRef.current.push({ shape: steam, originalY: -50, speed: 0.3 + Math.random() * 0.2 });
     }
 
@@ -571,7 +571,7 @@ export default function ProjectBeta() {
           const steam = new Zdog.Ellipse({
             addTo: mugGroupRef.current, width: 15, height: 15, stroke: 4, color: '#fff',
             translate: { y: -50 }, rotate: { y: Zdog.TAU/4 }, opacity: 1,
-          });
+          } as any);
           steamsRef.current.push({ shape: steam, originalY: -50, speed: 0.5 });
       }
       else if (closest === 'camera') {
