@@ -430,9 +430,9 @@ export default function ProjectBeta() {
       // 4-3. Radio Bounce
       if (radioBodyRef.current && isPlayingRef.current) {
           const scale = 1 + Math.sin(time * 15) * 0.1;
-          radioBodyRef.current.scale = scale; 
+          radioBodyRef.current.scale = { x: scale, y: scale, z: scale }; 
       } else if (radioBodyRef.current) {
-          radioBodyRef.current.scale = 1;
+          radioBodyRef.current.scale = { x: 1, y: 1, z: 1 };
       }
 
       // 4-4. Steam
@@ -475,11 +475,11 @@ export default function ProjectBeta() {
       illo.updateRenderGraph();
 
       // Store positions for click
-      if (lampGroupRef.current) screenPositions.current.lamp = lampGroupRef.current.renderOrigin;
-      if (radioGroupRef.current) screenPositions.current.radio = radioGroupRef.current.renderOrigin;
-      if (plantGroupRef.current) screenPositions.current.plant = plantGroupRef.current.renderOrigin;
-      if (cameraGroupRef.current) screenPositions.current.camera = cameraGroupRef.current.renderOrigin;
-      if (mugGroupRef.current) screenPositions.current.mug = mugGroupRef.current.renderOrigin;
+      if (lampGroupRef.current) screenPositions.current.lamp = (lampGroupRef.current as any).renderOrigin;
+      if (radioGroupRef.current) screenPositions.current.radio = (radioGroupRef.current as any).renderOrigin;
+      if (plantGroupRef.current) screenPositions.current.plant = (plantGroupRef.current as any).renderOrigin;
+      if (cameraGroupRef.current) screenPositions.current.camera = (cameraGroupRef.current as any).renderOrigin;
+      if (mugGroupRef.current) screenPositions.current.mug = (mugGroupRef.current as any).renderOrigin;
 
       requestRef.current = requestAnimationFrame(animate);
     };
@@ -509,7 +509,7 @@ export default function ProjectBeta() {
           width: 15, height: 8, stroke: 2,
           color: isNight ? PALETTE.night.plant : PALETTE.day.plant,
           fill: true, translate: { y: yPos, x: 5 * angle }, rotate: { z: -0.5 * angle },
-          scale: 0, // 초기값 0
+          scale: { x: 0, y: 0, z: 0 }, // 초기값 0
       });
       
       // GSAP Animation Fix
