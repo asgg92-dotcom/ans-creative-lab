@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Inter } from 'next/font/google';
 
+// [수정] axes: ['wght'] 제거
 const inter = Inter({ 
   subsets: ['latin'],
-  axes: ['wght'],
   display: 'swap',
 });
 
@@ -18,6 +18,23 @@ const PARTICLE_COLORS = [
   '#ff0055', // Pink
   '#ffd700', // Gold
 ];
+
+// Shard 타입 정의 (명시적)
+interface Shard {
+  x: number;
+  y: number;
+  originX: number;
+  originY: number;
+  vx: number;
+  vy: number;
+  rotation: number;
+  vRotation: number;
+  size: number;
+  color: string;
+  letterIndex: number;
+  returning: boolean;
+  vertices: {x: number, y: number}[];
+}
 
 export default function ElasticShardTextPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,7 +49,7 @@ export default function ElasticShardTextPage() {
   const letterWeights = useRef<number[]>([]);
   const targetWeights = useRef<number[]>([]);
   
-  const shardsRef = useRef<any[]>([]);
+  const shardsRef = useRef<Shard[]>([]);
   const animationRef = useRef<number>(0);
   const mouseRef = useRef({ x: 0, y: 0 });
 
@@ -151,7 +168,6 @@ export default function ElasticShardTextPage() {
             shard.y += shard.vy;
             
             const speed = Math.sqrt(shard.vx * shard.vx + shard.vy * shard.vy);
-            // 마찰: 빠르면 급제동(0.9), 느리면 무중력(1.0)
             const friction = speed > 5 ? 0.9 : 1.0;
             
             shard.vx *= friction;
@@ -161,7 +177,6 @@ export default function ElasticShardTextPage() {
             if (shard.x < 0 || shard.x > canvas.width) shard.vx *= -1;
             if (shard.y < 0 || shard.y > canvas.height) shard.vy *= -1;
             
-            // 유영 (속도 낮을 때)
             if (speed < 5) {
               shard.vx += (Math.random() - 0.5) * 0.01;
               shard.vy += (Math.random() - 0.5) * 0.01;
@@ -175,7 +190,6 @@ export default function ElasticShardTextPage() {
           ctx.translate(shard.x, shard.y);
           ctx.rotate(shard.rotation);
           
-          // 다각형 그리기 (vertices 배열 사용)
           ctx.beginPath();
           if (shard.vertices && shard.vertices.length > 0) {
             ctx.moveTo(shard.vertices[0].x, shard.vertices[0].y);
@@ -205,8 +219,11 @@ export default function ElasticShardTextPage() {
     if (!fontsLoaded) return;
 
     setExplodedIndices(prev => [...prev, index]);
+    
+    // 비동기 처리 안함 (동기적으로 샤드 생성)
     createShardsForLetter(index);
 
+    // 복귀 타이머
     setTimeout(() => {
       shardsRef.current.forEach(shard => {
         if (shard.letterIndex === index) {
@@ -214,6 +231,7 @@ export default function ElasticShardTextPage() {
         }
       });
 
+      // 복귀 완료 후 상태 초기화 타이머
       setTimeout(() => {
         setExplodedIndices(prev => prev.filter(i => i !== index));
       }, 800);
@@ -235,7 +253,9 @@ export default function ElasticShardTextPage() {
     const pos = letterPositions.current[index];
     const weight = letterWeights.current[index] || 100;
 
+    // 텍스트 그리기 (분석용)
     tempCtx.fillStyle = 'white';
+    // 폰트 설정 (Next.js Inter 객체의 style.fontFamily 사용)
     tempCtx.font = `${Math.round(weight)} 15vw ${inter.style.fontFamily}, sans-serif`;
     tempCtx.textAlign = 'center';
     
@@ -251,7 +271,8 @@ export default function ElasticShardTextPage() {
 
     const imageData = tempCtx.getImageData(scanX, scanY, scanW, scanH);
     const data = imageData.data;
-    const newShards = [];
+    
+    const newShards: Shard[] = [];
     const step = 4;
 
     for (let y = 0; y < scanH; y += step) {
@@ -261,17 +282,14 @@ export default function ElasticShardTextPage() {
           const globalX = scanX + x;
           const globalY = scanY + y;
 
-          // 랜덤 다각형 및 크기 설정 (변수 선언 위치 수정)
-          const vertexCount = Math.floor(Math.random() * 3) + 3; // 3~5각형
-          
-          // 크기 (지수 분포) - 최대 5배로 조정
+          const vertexCount = Math.floor(Math.random() * 3) + 3; 
           const scale = Math.pow(Math.random(), 3) * 5; 
           const size = step * (0.5 + scale);
           
           const vertices = [];
           for (let j = 0; j < vertexCount; j++) {
             const angle = (j / vertexCount) * Math.PI * 2;
-            const r = size * (0.5 + Math.random() * 0.5); // 반지름 변형
+            const r = size * (0.5 + Math.random() * 0.5); 
             vertices.push({
               x: Math.cos(angle) * r,
               y: Math.sin(angle) * r
@@ -283,10 +301,10 @@ export default function ElasticShardTextPage() {
             y: globalY,
             originX: globalX,
             originY: globalY,
-            vx: (Math.random() - 0.5) * 150,
+            vx: (Math.random() - 0.5) * 150, // 속도
             vy: (Math.random() - 0.5) * 150,
             rotation: Math.random() * Math.PI * 2,
-            vRotation: (Math.random() - 0.5) * 0.05, // 회전 속도 대폭 감소 (0.5 -> 0.05)
+            vRotation: (Math.random() - 0.5) * 0.05,
             size: size,
             color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
             letterIndex: index, 
@@ -298,13 +316,6 @@ export default function ElasticShardTextPage() {
     }
 
     shardsRef.current = [...shardsRef.current, ...newShards];
-  };
-
-  const handleReset = () => {
-    setExplodedIndices([]);
-    shardsRef.current = [];
-    letterWeights.current.fill(100);
-    targetWeights.current.fill(100);
   };
 
   return (

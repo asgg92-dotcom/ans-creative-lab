@@ -1,6 +1,6 @@
 # LinkHub 프로젝트 기획서 (업데이트됨)
 
-Last Updated: 2026-02-18 (수) 13:00
+Last Updated: 2026-02-18 (수) 15:30
 
 ## 1. 프로젝트 개요
 - 목표: 다양한 링크(포트폴리오, 작업물)를 모아서 보여주는 "살아 움직이는 미니멀 갤러리" 구축.
@@ -12,7 +12,11 @@ Last Updated: 2026-02-18 (수) 13:00
 - 프레임워크: Next.js 14+ (App Router)
 - 언어: TypeScript
 - 스타일링: Tailwind CSS (미니멀 디자인 시스템)
-- 애니메이션: Framer Motion (필수 - 뷰 모드 전환 시 탄성 및 유동적 움직임 구현)
+- 애니메이션: Framer Motion, GSAP
+- 3D 그래픽스:
+  - Three.js & React Three Fiber (R3F)
+  - Zdog.js
+  - Matter.js (2D Physics)
 - 아이콘: Lucide React
 - 배포: Vercel
 
@@ -74,13 +78,17 @@ export interface LinkItem {
 
 ## 5. 구현 로드맵 (Todos)
 
-[ ] 프로젝트 초기화: Next.js, TypeScript, Tailwind, Framer Motion 설치 <!-- id: init-project -->
-[ ] 아키텍처 구성:
+- [x] 프로젝트 초기화: Next.js, TypeScript, Tailwind, Framer Motion 설치 <!-- id: init-project -->
+- [x] 아키텍처 구성:
     - `data/links.ts` 생성 및 Config 구조 정의 <!-- id: config-setup -->
     - `_experiments` 폴더 및 기본 레이아웃 구성 <!-- id: layout-setup -->
-[ ] 테마 시스템 구현:
+- [x] 테마 시스템 구현:
     - `ThemeContext` 및 스위치 로직 개발 <!-- id: theme-system -->
-    - 3가지 이상의 재미있는 테마(Retro, 3D, Minimal 등) 구현 <!-- id: theme-impl -->
-[ ] 메인 페이지 개발: Config 기반 리스트 렌더링 및 테마 적용 <!-- id: main-page -->
-[ ] 하위 페이지 실험: 샘플 프로젝트를 `_experiments`에서 개발 후 배포 <!-- id: experiment-test -->
-[ ] 배포 준비: Vercel 배포 및 최종 점검 <!-- id: deploy-prep -->
+    - 3가지 이상의 재미있는 테마(FallingText, FallingShapes) 구현 <!-- id: theme-impl -->
+- [x] 메인 페이지 개발: Config 기반 리스트 렌더링 및 테마 적용 <!-- id: main-page -->
+- [x] 하위 페이지 실험: 샘플 프로젝트 3종 개발 완료 <!-- id: experiment-test -->
+    - Project Alpha (Elastic Shard Text)
+    - Project Beta (Lo-Fi Desk Widget)
+    - Project Gamma (Reflective Abstract)
+- [x] Github 업로드: 원격 저장소 연결 및 Push 완료 <!-- id: github-push -->
+- [ ] 배포 준비: Vercel 배포 및 최종 점검 <!-- id: deploy-prep -->
