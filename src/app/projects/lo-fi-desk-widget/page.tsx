@@ -355,15 +355,15 @@ export default function ProjectBeta() {
         translate: { z: 9 },
     });
     // 렌즈 반사광 (Highlight)
-    new Zdog.Ellipse({
-        addTo: lensGroup,
-        diameter: 6,
-        stroke: false,
-        fill: true,
-        color: '#FFF',
-        translate: { z: 9.1, x: -5, y: -5 },
-        opacity: 0.6,
-    });
+        new Zdog.Ellipse({
+            addTo: lensGroup,
+            diameter: 6,
+            stroke: false,
+            fill: true,
+            color: '#FFF',
+            translate: { z: 9.1, x: -5, y: -5 },
+            opacity: 0.6,
+        } as any);
 
     // 4. 디테일 (뷰파인더, 셔터, 플래시)
     // 뷰파인더
