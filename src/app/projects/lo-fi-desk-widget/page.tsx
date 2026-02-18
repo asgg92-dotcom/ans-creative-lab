@@ -64,7 +64,7 @@ export default function ProjectBeta() {
   
   // Particles (Dust + Steam)
   const particlesRef = useRef<{ shape: Zdog.Shape, originalPos: {x:number, y:number, z:number} }[]>([]);
-  const steamsRef = useRef<{ shape: Zdog.Ellipse, originalY: number, speed: number }[]>([]);
+  const steamsRef = useRef<{ shape: any, originalY: number, speed: number }[]>([]);
   const cloudsRef = useRef<{ shape: Zdog.Shape, speed: number }[]>([]);
 
   // Screen Positions
