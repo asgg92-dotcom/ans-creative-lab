@@ -16,10 +16,37 @@ const MOBILE_BREAKPOINT = 768;
 
 // 형광/비비드 컬러 팔레트
 const SHAPE_COLORS = [
-  '#FF3B30', '#FF9500', '#FFCC00', '#4CD964', 
+  '#FF3B30', '#FF9500', '#FFCC00', '#4CD964',
   '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55',
-  '#A2845E', '#8E8E93', '#FFFFFF', '#000000'
+  '#A2845E', '#8E8E93', '#FFFFFF', '#000000',
 ];
+
+function hexToHue(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max === min) return 0;
+  const d = max - min;
+  let h = 0;
+  switch (max) {
+    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+    case g: h = ((b - r) / d + 2) / 6; break;
+    case b: h = ((r - g) / d + 4) / 6; break;
+  }
+  return h * 360;
+}
+
+function getDiverseColors(count: number): string[] {
+  if (count <= 0) return [];
+  const byHue = [...SHAPE_COLORS].sort((a, b) => hexToHue(a) - hexToHue(b));
+  const step = Math.max(1, Math.floor(byHue.length / count));
+  const start = Math.floor(Math.random() * byHue.length);
+  return Array.from({ length: count }, (_, i) =>
+    byHue[(start + i * step) % byHue.length]
+  );
+}
 
 export function FallingShapes({ links, isExiting = false, onAllFallen }: FallingShapesProps) {
   const sceneRef = useRef<HTMLDivElement>(null);
@@ -43,11 +70,12 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
     setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
   }, []);
 
-  // 1. 랜덤 속성 생성
+  // 1. 랜덤 속성 생성 (색상은 유사하지 않게 골고루 배분)
   useEffect(() => {
-    const props = links.map(() => ({
-      color: SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)],
-      size: Math.floor(Math.random() * 140) + 60, 
+    const colors = getDiverseColors(links.length);
+    const props = links.map((_, i) => ({
+      color: colors[i],
+      size: Math.floor(Math.random() * 140) + 60,
     }));
     setShapeProps(props);
   }, [links]);

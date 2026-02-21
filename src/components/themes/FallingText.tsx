@@ -74,14 +74,15 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
 
     const { width: W, height: H } = bounds;
     const wallThickness = 2;
-    const edgeSlop = 4; // 좌우 벽을 살짝 바깥으로 - 가장자리까지 텍스트가 닿도록
+    const edgeSlop = 4;
+    const _isMobile = window.innerWidth < MOBILE_BREAKPOINT;
 
     const engine = Engine.create();
     const world = engine.world;
     engineRef.current = engine;
 
-    // 중력 약간 강화
-    engine.gravity.y = 1.5;
+    // 중력: 모바일은 느리게, 데스크톱은 기존대로
+    engine.gravity.y = _isMobile ? 0.9 : 1.5;
 
     const render = Render.create({
       element: sceneRef.current,
@@ -133,7 +134,6 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
     World.add(world, [ground, leftWall, rightWall]);
 
     const textBodies: Matter.Body[] = [];
-    const _isMobile = window.innerWidth < MOBILE_BREAKPOINT;
     const { charWidth, padding, height } = getTextDimensions(_isMobile);
 
     const playWidth = W + edgeSlop * 2;
@@ -180,12 +180,13 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
       );
       // 이 body만 땅과 충돌하지 않도록 (mask에서 ground 제외), 다른 텍스트와는 충돌 유지
       bottomBody.collisionFilter.mask = 0xFFFFFFFF & ~GROUND_CATEGORY;
-      // 자연스러운 추락: 약한 초기 속도 + 각속도(회전) + 미세한 좌우 흔들림
+      // 자연스러운 추락: 모바일은 느리게
+      const fallSpeed = _isMobile ? 3 : 6;
       Matter.Body.setVelocity(bottomBody, {
-        x: (Math.random() - 0.5) * 4,
-        y: 6 + Math.random() * 4,
+        x: (Math.random() - 0.5) * (_isMobile ? 2 : 4),
+        y: fallSpeed + Math.random() * (_isMobile ? 2 : 4),
       });
-      Matter.Body.setAngularVelocity(bottomBody, (Math.random() - 0.5) * 0.06);
+      Matter.Body.setAngularVelocity(bottomBody, (Math.random() - 0.5) * (_isMobile ? 0.04 : 0.06));
     };
 
     const intervalId = setInterval(pushBottomAndRespawn, 3000);
@@ -281,13 +282,14 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
     if (!isExiting || textBodiesRef.current.length === 0) return;
     allFallenFiredRef.current = false;
 
+    const isMobileExit = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
     textBodiesRef.current.forEach((body) => {
       body.collisionFilter.mask = 0xFFFFFFFF & ~GROUND_CATEGORY;
       Matter.Body.setVelocity(body, {
-        x: (Math.random() - 0.5) * 6,
-        y: 8 + Math.random() * 6,
+        x: (Math.random() - 0.5) * (isMobileExit ? 4 : 6),
+        y: (isMobileExit ? 4 : 8) + Math.random() * (isMobileExit ? 3 : 6),
       });
-      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.08);
+      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * (isMobileExit ? 0.05 : 0.08));
     });
   }, [isExiting]);
 
