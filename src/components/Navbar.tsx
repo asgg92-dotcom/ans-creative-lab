@@ -13,7 +13,7 @@ export function Navbar() {
     >
       <div className="flex items-center justify-center text-sm font-bold tracking-tight w-full">
         {/* 중앙 정렬을 위해 w-full 및 justify-center 추가 */}
-        <span className="text-gray-900 dark:text-white">
+        <span className="text-white">
           <ScrambleText text="Ans Kim's Creative Lab" interval={3000} />
         </span>
         <span className="text-orange-500 whitespace-pre">

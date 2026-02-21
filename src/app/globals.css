@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,15 +12,44 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Shuffle - 모서리에만 gradient neon + 회전 애니메이션 */
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gradient-rotate {
+  to { --gradient-angle: 360deg; }
+}
+
+.shuffle-neon-border {
+  --gradient-angle: 0deg;
+  padding: 2px;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #22d3ee,
+    #a855f7,
+    #ec4899,
+    #f97316,
+    #22d3ee
+  );
+  animation: gradient-rotate 3.5s linear infinite;
+  box-shadow:
+    0 0 0px rgba(34, 211, 238, 0.5),
+    0 0 0px rgba(168, 85, 247, 0.4),
+    0 0 0px rgba(236, 72, 153, 0.3);
+}
+.shuffle-neon-border:hover {
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.6),
+    0 0 20px rgba(168, 85, 247, 0.5),
+    0 0 30px rgba(236, 72, 153, 0.4);
 }

@@ -27,19 +27,21 @@ export function ThemeSwitch() {
   return (
     <AnimatePresence>
       {isHome && (
-        <motion.button
-          onClick={handleRandomTheme}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-6 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black shadow-lg hover:bg-orange-500 hover:text-white dark:hover:bg-orange-500 dark:hover:text-white hover:scale-105 active:scale-95 transition-all duration-300"
+        <motion.div
+          key="shuffle"
+          className="shuffle-neon-border fixed bottom-16 left-1/2 -translate-x-1/2 z-50 inline-flex"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }} // 사라질 때 페이드아웃
-          whileHover={{ y: -2 }}
+          exit={{ opacity: 0 }}
         >
-          <Shuffle className="w-4 h-4" />
-          <span className="font-bold text-sm">
-            <ScrambleText text="Shuffle" interval={2000} /> {/* 2초마다 지직거림 */}
-          </span>
-        </motion.button>
+          <motion.button
+            onClick={handleRandomTheme}
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-full border-0 bg-[var(--background)] text-white text-sm font-bold hover:bg-[#141414] transition-colors"
+          >
+            <Shuffle className="w-4 h-4" />
+            <ScrambleText text="Shuffle" interval={2000} />
+          </motion.button>
+        </motion.div>
       )}
     </AnimatePresence>
   );

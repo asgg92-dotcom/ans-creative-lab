@@ -53,11 +53,12 @@ export function FallingText({ links }: FallingTextProps) {
     renderRef.current = render;
 
     const groundHeight = 100;
+    const groundOffset = 120; // Shuffle 버튼 위 여유
     const wallThickness = 200;
     
     const ground = Bodies.rectangle(
       window.innerWidth / 2,
-      window.innerHeight, 
+      window.innerHeight - groundOffset, 
       window.innerWidth,
       groundHeight,
       { isStatic: true, render: { visible: false }, label: 'ground' }
@@ -146,7 +147,7 @@ export function FallingText({ links }: FallingTextProps) {
 
       Matter.Body.setPosition(ground, {
         x: window.innerWidth / 2,
-        y: window.innerHeight,
+        y: window.innerHeight - groundOffset,
       });
       
       Matter.Body.setPosition(rightWall, {
@@ -169,7 +170,7 @@ export function FallingText({ links }: FallingTextProps) {
   }, [links]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-white dark:bg-black">
+    <div className="relative w-full h-screen overflow-hidden bg-black">
       <div ref={sceneRef} className="absolute inset-0 pointer-events-none opacity-0" />
 
       {links.map((link, index) => {
@@ -184,7 +185,7 @@ export function FallingText({ links }: FallingTextProps) {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute top-0 left-0 flex items-center justify-center cursor-pointer select-none transition-colors duration-300 text-black dark:text-white"
+            className="absolute top-0 left-0 flex items-center justify-center cursor-pointer select-none transition-colors duration-300 text-white"
             style={{ 
               width: `${estimatedWidth}px`,
               height: '140px',

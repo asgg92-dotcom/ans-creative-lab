@@ -21,7 +21,7 @@ export default function ProjectPage() {
         </p>
         <button 
           onClick={() => window.close()} // 닫기 버튼 (새 창이므로)
-          className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-80 transition-opacity"
+          className="px-6 py-3 bg-white text-black rounded-lg hover:opacity-80 transition-opacity"
         >
           닫기
         </button>

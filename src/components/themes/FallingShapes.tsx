@@ -68,11 +68,12 @@ export function FallingShapes({ links }: FallingShapesProps) {
 
     // 벽 생성
     const groundHeight = 100;
+    const groundOffset = 120; // Shuffle 버튼 위 여유
     const wallThickness = 200;
     
     const ground = Bodies.rectangle(
       window.innerWidth / 2,
-      window.innerHeight - 40, 
+      window.innerHeight - groundOffset, 
       window.innerWidth,
       groundHeight,
       { isStatic: true, render: { visible: false }, label: 'ground' }
@@ -233,7 +234,7 @@ export function FallingShapes({ links }: FallingShapesProps) {
 
       Matter.Body.setPosition(ground, {
         x: window.innerWidth / 2,
-        y: window.innerHeight - 40,
+        y: window.innerHeight - groundOffset,
       });
       Matter.Body.setPosition(rightWall, {
         x: window.innerWidth + wallThickness / 2,
@@ -262,7 +263,7 @@ export function FallingShapes({ links }: FallingShapesProps) {
 
   return (
     <div 
-      className="relative w-full h-screen overflow-hidden bg-white dark:bg-black font-montserrat"
+      className="relative w-full h-screen overflow-hidden bg-black font-montserrat"
       onMouseMove={handleMouseMove}
     >
       {/* 
