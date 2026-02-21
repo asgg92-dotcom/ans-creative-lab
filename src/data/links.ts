@@ -44,4 +44,13 @@ export const links: LinkItem[] = [
     tags: ['R3F', 'Three.js', 'Postprocessing'],
     date: '2026-02-22',
   },
+  {
+    id: '4',
+    title: 'LifeLine 100',
+    description: '100세까지 남은 수명 시각화',
+    url: '/projects/lifeline-100',
+    category: 'Web',
+    tags: ['인터랙티브', '생명'],
+    date: '2026-02-18',
+  },
 ];
