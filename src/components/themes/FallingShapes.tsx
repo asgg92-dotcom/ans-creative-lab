@@ -70,13 +70,19 @@ export function FallingShapes({ links }: FallingShapesProps) {
     const groundHeight = 100;
     const groundOffset = 120; // Shuffle 버튼 위 여유
     const wallThickness = 200;
-    
+    const GROUND_CATEGORY = 0x0002;
+
     const ground = Bodies.rectangle(
       window.innerWidth / 2,
       window.innerHeight - groundOffset, 
       window.innerWidth,
       groundHeight,
-      { isStatic: true, render: { visible: false }, label: 'ground' }
+      {
+        isStatic: true,
+        render: { visible: false },
+        label: 'ground',
+        collisionFilter: { category: GROUND_CATEGORY, mask: 0xFFFFFFFF, group: 0 },
+      }
     );
 
     const leftWall = Bodies.rectangle(
@@ -189,6 +195,22 @@ export function FallingShapes({ links }: FallingShapesProps) {
     Render.run(render);
     runnerRef.current = runner;
 
+    // 3초마다 제일 하단 원이 땅을 관통해 화면 밖으로 떨어지게 함
+    const pushBottomAndRespawn = () => {
+      const bottomBody = shapeBodies.reduce((a, b) =>
+        a.position.y > b.position.y ? a : b
+      );
+      bottomBody.collisionFilter.mask = 0xFFFFFFFF & ~GROUND_CATEGORY;
+      // 자연스러운 추락: 약한 초기 속도 + 각속도(회전) + 미세한 좌우 흔들림
+      Matter.Body.setVelocity(bottomBody, {
+        x: (Math.random() - 0.5) * 4,
+        y: 6 + Math.random() * 4,
+      });
+      Matter.Body.setAngularVelocity(bottomBody, (Math.random() - 0.5) * 0.08);
+    };
+
+    const intervalId = setInterval(pushBottomAndRespawn, 3000);
+
     // DOM 업데이트 루프
     let animationId: number;
     
@@ -202,23 +224,30 @@ export function FallingShapes({ links }: FallingShapesProps) {
           const rotation = body.angle;
           const radius = shapeProps[index].size;
 
-          // 1. 화면 밖으로 나갔는지 체크 (리스폰 로직)
-          const margin = 500; // 화면 밖 여유 공간
-          if (
-            x < -margin || 
-            x > window.innerWidth + margin || 
-            y > window.innerHeight + margin
-          ) {
-            // 다시 위쪽으로 순간이동
+          // 화면 밖(아래)으로 나가면 최상단에서 리스폰 + 땅 충돌 복구
+          if (y > window.innerHeight + 400) {
             Matter.Body.setPosition(body, {
               x: Math.random() * (window.innerWidth - radius * 4) + radius * 2,
-              y: -Math.random() * 500 - 200 // 위쪽에서 다시 떨어짐
+              y: -Math.random() * 800 - 200,
             });
-            // 속도 초기화 (안 그러면 엄청난 속도로 계속 날아다님)
             Matter.Body.setVelocity(body, { x: 0, y: 0 });
+            body.collisionFilter.category = 1;
+            body.collisionFilter.mask = 0xFFFFFFFF;
+            body.collisionFilter.group = 0;
+          }
+          // 좌우로 나갔을 때도 리스폰
+          else if (x < -500 || x > window.innerWidth + 500) {
+            Matter.Body.setPosition(body, {
+              x: Math.random() * (window.innerWidth - radius * 4) + radius * 2,
+              y: -Math.random() * 500 - 200,
+            });
+            Matter.Body.setVelocity(body, { x: 0, y: 0 });
+            body.collisionFilter.category = 1;
+            body.collisionFilter.mask = 0xFFFFFFFF;
+            body.collisionFilter.group = 0;
           }
 
-          // 2. DOM 위치 업데이트
+          // DOM 위치 업데이트
           domElement.style.transform = `translate(${x - radius}px, ${y - radius}px) rotate(${rotation}rad)`;
           domElement.style.opacity = '1';
         }
@@ -245,6 +274,7 @@ export function FallingShapes({ links }: FallingShapesProps) {
     window.addEventListener('resize', handleResize);
 
     return () => {
+      clearInterval(intervalId);
       window.removeEventListener('resize', handleResize);
       if (animationId) cancelAnimationFrame(animationId);
       Render.stop(render);
