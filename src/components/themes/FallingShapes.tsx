@@ -12,6 +12,7 @@ interface FallingShapesProps {
 
 const GROUND_CATEGORY = 0x0002;
 const OFF_SCREEN_Y = 500;
+const MOBILE_BREAKPOINT = 768;
 
 // 형광/비비드 컬러 팔레트
 const SHAPE_COLORS = [
@@ -36,6 +37,11 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
   const [shapeProps, setShapeProps] = useState<{ color: string; size: number }[]>([]);
   const [hoveredLink, setHoveredLink] = useState<LinkItem | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+  }, []);
 
   // 1. 랜덤 속성 생성
   useEffect(() => {
@@ -49,6 +55,8 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
   // 2. 물리 엔진 설정
   useEffect(() => {
     if (!sceneRef.current || shapeProps.length === 0) return;
+
+    const getEffectiveSize = (baseSize: number) => (isMobile ? baseSize / 2 : baseSize);
 
     const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint, Events, Query, Composite } = Matter;
 
@@ -113,16 +121,17 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
 
     World.add(world, [ground, leftWall, rightWall]);
 
-    // 원형 물리 객체 생성
+    // 원형 물리 객체 생성 (모바일: 반지름 절반)
     const shapeBodies: Matter.Body[] = [];
 
     links.forEach((link, index) => {
       const { size } = shapeProps[index];
+      const radius = getEffectiveSize(size);
       
-      const x = Math.random() * (window.innerWidth - size * 4) + size * 2;
+      const x = Math.random() * (window.innerWidth - radius * 4) + radius * 2;
       const y = -Math.random() * 800 - 200 - (index * 200); 
 
-      const body = Bodies.circle(x, y, size, {
+      const body = Bodies.circle(x, y, radius, {
         restitution: 0.8,
         friction: 0.001,
         frictionAir: 0.005,
@@ -235,7 +244,7 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
         if (domElement && !isNaN(index)) {
           const { x, y } = body.position;
           const rotation = body.angle;
-          const radius = shapeProps[index].size;
+          const radius = getEffectiveSize(shapeProps[index].size);
 
           // 화면 밖(아래)으로 나가면 최상단에서 리스폰 (Shuffle 전환 중에는 리스폰 안 함)
           if (y > window.innerHeight + OFF_SCREEN_Y && !isExitingRef.current) {
@@ -248,7 +257,7 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
             body.collisionFilter.mask = 0xFFFFFFFF;
             body.collisionFilter.group = 0;
           }
-          // 좌우로 나갔을 때도 리스폰 (Shuffle 전환 중에는 스킵)
+          // 좌우로 나갔을 때도 리스폰
           else if ((x < -500 || x > window.innerWidth + 500) && !isExitingRef.current) {
             Matter.Body.setPosition(body, {
               x: Math.random() * (window.innerWidth - radius * 4) + radius * 2,
@@ -306,7 +315,7 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
       World.clear(world, false);
       Engine.clear(engine);
     };
-  }, [links, shapeProps]);
+  }, [links, shapeProps, isMobile]);
 
   // Shuffle 테마 전환 시 모든 원 아래로 떨어지게
   useEffect(() => {
@@ -348,7 +357,8 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
       */}
       {links.map((link, index) => {
         const { color, size } = shapeProps[index];
-        const diameter = size * 2;
+        const effectiveSize = isMobile ? size / 2 : size;
+        const diameter = effectiveSize * 2;
 
         return (
           <div 

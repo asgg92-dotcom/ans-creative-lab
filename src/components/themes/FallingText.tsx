@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Matter from 'matter-js';
 import { LinkItem } from '@/data/links';
 
@@ -25,24 +25,56 @@ const HOVER_COLORS = [
 ];
 
 const OFF_SCREEN_Y = 500;
+const MOBILE_BREAKPOINT = 768;
+
+function getTextDimensions(isMobile: boolean) {
+  // 모바일: 실제 글자 크기에 맞춘 최소 충돌 박스 | 데스크톱: 원본 유지
+  if (isMobile) {
+    return { charWidth: 18, padding: 8, height: 44 };
+  }
+  return { charWidth: 70, padding: 40, height: 140 };
+}
 
 export function FallingText({ links, isExiting = false, onAllFallen }: FallingTextProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
   const renderRef = useRef<Matter.Render | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const textBodiesRef = useRef<Matter.Body[]>([]);
+  const boundsRef = useRef({ width: 0, height: 0 });
   const isExitingRef = useRef(isExiting);
   const allFallenFiredRef = useRef(false);
   const onAllFallenRef = useRef(onAllFallen);
+  // hydration 방지: 마운트 후에만 window 사용 (서버/클라이언트 초기 렌더 일치)
+  const [isMobile, setIsMobile] = useState(false);
   isExitingRef.current = isExiting;
   onAllFallenRef.current = onAllFallen;
 
   useEffect(() => {
-    if (!sceneRef.current) return;
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+  }, []);
+
+  useEffect(() => {
+    if (!sceneRef.current || !wrapperRef.current) return;
 
     const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint } = Matter;
+
+    const getBounds = () => {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      const w = rect?.width ?? 0;
+      const h = rect?.height ?? 0;
+      if (w > 0 && h > 0) return { width: w, height: h };
+      return { width: window.innerWidth, height: window.innerHeight };
+    };
+
+    const bounds = getBounds();
+    boundsRef.current = bounds;
+
+    const { width: W, height: H } = bounds;
+    const wallThickness = 2;
+    const edgeSlop = 4; // 좌우 벽을 살짝 바깥으로 - 가장자리까지 텍스트가 닿도록
 
     const engine = Engine.create();
     const world = engine.world;
@@ -55,8 +87,8 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
       element: sceneRef.current,
       engine: engine,
       options: {
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: W,
+        height: H,
         background: 'transparent',
         wireframes: false,
         showAngleIndicator: false,
@@ -66,12 +98,11 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
 
     const groundHeight = 100;
     const groundOffset = 120; // Shuffle 버튼 위 여유
-    const wallThickness = 200;
 
     const ground = Bodies.rectangle(
-      window.innerWidth / 2,
-      window.innerHeight - groundOffset, 
-      window.innerWidth,
+      W / 2,
+      H - groundOffset,
+      W,
       groundHeight,
       {
         isStatic: true,
@@ -81,38 +112,38 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
       }
     );
 
+    // 좌측 벽: 오른쪽 모서리가 x=-edgeSlop (플레이 영역을 살짝 넓혀 가장자리까지 닿게)
     const leftWall = Bodies.rectangle(
-      -wallThickness / 2,
-      window.innerHeight / 2,
+      -edgeSlop - wallThickness / 2,
+      H / 2,
       wallThickness,
-      window.innerHeight * 2,
+      H * 2,
       { isStatic: true, render: { visible: false } }
     );
 
+    // 우측 벽: 왼쪽 모서리가 x=W+edgeSlop
     const rightWall = Bodies.rectangle(
-      window.innerWidth + wallThickness / 2,
-      window.innerHeight / 2,
+      W + edgeSlop + wallThickness / 2,
+      H / 2,
       wallThickness,
-      window.innerHeight * 2,
+      H * 2,
       { isStatic: true, render: { visible: false } }
     );
 
     World.add(world, [ground, leftWall, rightWall]);
 
     const textBodies: Matter.Body[] = [];
+    const _isMobile = window.innerWidth < MOBILE_BREAKPOINT;
+    const { charWidth, padding, height } = getTextDimensions(_isMobile);
 
+    const playWidth = W + edgeSlop * 2;
     links.forEach((link, index) => {
-      // [롤백] 기존 물리 엔진 설정값 복구
-      // 영문 기준 글자당 약 70px, 패딩 40px
-      const charWidth = 70;
-      const padding = 40;
-      const width = link.title.length * charWidth + padding; 
-      const height = 140; 
-      
-      const x = Math.random() * (window.innerWidth - width) + width / 2;
+      const linkWidth = link.title.length * charWidth + padding;
+
+      const x = Math.random() * (playWidth - linkWidth) + linkWidth / 2 - edgeSlop;
       const y = -Math.random() * 2000 - 200;
 
-      const body = Bodies.rectangle(x, y, width, height, {
+      const body = Bodies.rectangle(x, y, linkWidth, height, {
         restitution: 0.5,
         friction: 0.1,
         frictionAir: 0.01,
@@ -170,14 +201,15 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
           const { x, y } = body.position;
           const rotation = body.angle;
 
-          // 화면 밖(아래)으로 나가면 최상단에서 리스폰 (Shuffle 전환 중에는 리스폰 안 함)
-          if (y > window.innerHeight + OFF_SCREEN_Y && !isExitingRef.current) {
+          // 화면 밖(아래)로 나가면 최상단에서 리스폰 (Shuffle 전환 중에는 리스폰 안 함)
+          const { height: boundsH, width: boundsW } = boundsRef.current;
+          if (boundsH > 0 && y > boundsH + OFF_SCREEN_Y && !isExitingRef.current) {
             const link = links[index];
-            const charWidth = 70;
-            const padding = 40;
-            const width = link.title.length * charWidth + padding;
+            const dims = getTextDimensions(window.innerWidth < MOBILE_BREAKPOINT);
+            const linkW = link.title.length * dims.charWidth + dims.padding;
+            const playW = boundsW + edgeSlop * 2;
             Matter.Body.setPosition(body, {
-              x: Math.random() * (window.innerWidth - width) + width / 2,
+              x: Math.random() * (playW - linkW) + linkW / 2 - edgeSlop,
               y: -Math.random() * 800 - 200,
             });
             Matter.Body.setVelocity(body, { x: 0, y: 0 });
@@ -193,8 +225,9 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
       });
 
       // Shuffle 전환 중: 모두 떨어졌으면 onAllFallen 콜백 (1회만)
-      if (isExitingRef.current && onAllFallenRef.current && !allFallenFiredRef.current) {
-        const allOffScreen = textBodies.every((b) => b.position.y > window.innerHeight + OFF_SCREEN_Y);
+      const { height: boundsH2 } = boundsRef.current;
+      if (boundsH2 > 0 && isExitingRef.current && onAllFallenRef.current && !allFallenFiredRef.current) {
+        const allOffScreen = textBodies.every((b) => b.position.y > boundsH2 + OFF_SCREEN_Y);
         if (allOffScreen) {
           allFallenFiredRef.current = true;
           onAllFallenRef.current();
@@ -207,25 +240,33 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
     animationId = requestAnimationFrame(updateDOM);
 
     const handleResize = () => {
-      render.canvas.width = window.innerWidth;
-      render.canvas.height = window.innerHeight;
+      const b = getBounds();
+      if (b.width <= 0 || b.height <= 0) return;
+      boundsRef.current = b;
+
+      render.canvas.width = b.width;
+      render.canvas.height = b.height;
 
       Matter.Body.setPosition(ground, {
-        x: window.innerWidth / 2,
-        y: window.innerHeight - groundOffset,
+        x: b.width / 2,
+        y: b.height - groundOffset,
       });
-      
+      Matter.Body.setPosition(leftWall, {
+        x: -edgeSlop - wallThickness / 2,
+        y: b.height / 2,
+      });
       Matter.Body.setPosition(rightWall, {
-        x: window.innerWidth + wallThickness / 2,
-        y: window.innerHeight / 2,
+        x: b.width + edgeSlop + wallThickness / 2,
+        y: b.height / 2,
       });
     };
 
-    window.addEventListener('resize', handleResize);
+    const ro = new ResizeObserver(handleResize);
+    ro.observe(wrapperRef.current);
 
     return () => {
       clearInterval(intervalId);
-      window.removeEventListener('resize', handleResize);
+      ro.disconnect();
       if (animationId) cancelAnimationFrame(animationId);
       Render.stop(render);
       Runner.stop(runner);
@@ -233,7 +274,7 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
       World.clear(world, false);
       Engine.clear(engine);
     };
-  }, [links]);
+  }, [links, isMobile]); // isMobile 변경 시 물리 엔진 재생성
 
   // Shuffle 테마 전환 시 모든 텍스트 아래로 떨어지게
   useEffect(() => {
@@ -251,13 +292,13 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
   }, [isExiting]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
+    <div ref={wrapperRef} className="relative w-full h-screen overflow-hidden bg-black">
       <div ref={sceneRef} className="absolute inset-0 pointer-events-none opacity-0" />
 
       {links.map((link, index) => {
         const hoverColor = HOVER_COLORS[index % HOVER_COLORS.length];
-        // [롤백] 기존 렌더링 설정값 복구
-        const estimatedWidth = link.title.length * 70 + 40;
+        const dims = getTextDimensions(isMobile);
+        const estimatedWidth = link.title.length * dims.charWidth + dims.padding;
 
         return (
           <a
@@ -269,7 +310,7 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
             className="absolute top-0 left-0 flex items-center justify-center cursor-pointer select-none transition-colors duration-300 text-white"
             style={{ 
               width: `${estimatedWidth}px`,
-              height: '140px',
+              height: `${dims.height}px`,
               opacity: 0,
               pointerEvents: 'auto',
               willChange: 'transform',
@@ -282,8 +323,8 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
               e.currentTarget.style.color = ''; 
             }}
           >
-            {/* [롤백] 폰트 크기 복구 */}
-            <h3 className="text-[5rem] md:text-[8rem] font-black tracking-tighter leading-none text-center w-full whitespace-nowrap">
+            {/* 모바일: 2.5rem, 데스크톱: 8rem (데스크톱 영향 없음) */}
+            <h3 className="text-[2rem] md:text-[8rem] font-black tracking-tighter leading-none text-center w-full whitespace-nowrap">
               {link.title}
             </h3>
           </a>
