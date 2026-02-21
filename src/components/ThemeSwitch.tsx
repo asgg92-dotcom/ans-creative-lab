@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { ScrambleText } from '@/components/ui/ScrambleText';
 
 export function ThemeSwitch() {
-  const { setTheme, availableThemes, currentTheme } = useTheme(); // currentTheme 추가
+  const { triggerExitTransition, availableThemes, currentTheme } = useTheme();
   const pathname = usePathname();
 
   // 루트 페이지('/')가 아니면 렌더링하지 않음
@@ -15,13 +15,11 @@ export function ThemeSwitch() {
 
   // 랜덤 테마 선택 로직
   const handleRandomTheme = () => {
-    // 현재 테마를 제외한 나머지 테마들
     const otherThemes = availableThemes.filter(t => t !== currentTheme);
-    
-    if (otherThemes.length === 0) return; // 바꿀 테마가 없으면 종료
+    if (otherThemes.length === 0) return;
 
     const randomTheme = otherThemes[Math.floor(Math.random() * otherThemes.length)];
-    setTheme(randomTheme);
+    triggerExitTransition(randomTheme);
   };
 
   return (

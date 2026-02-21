@@ -6,7 +6,12 @@ import { LinkItem } from '@/data/links';
 
 interface FallingShapesProps {
   links: LinkItem[];
+  isExiting?: boolean;
+  onAllFallen?: () => void;
 }
+
+const GROUND_CATEGORY = 0x0002;
+const OFF_SCREEN_Y = 500;
 
 // 형광/비비드 컬러 팔레트
 const SHAPE_COLORS = [
@@ -15,12 +20,18 @@ const SHAPE_COLORS = [
   '#A2845E', '#8E8E93', '#FFFFFF', '#000000'
 ];
 
-export function FallingShapes({ links }: FallingShapesProps) {
+export function FallingShapes({ links, isExiting = false, onAllFallen }: FallingShapesProps) {
   const sceneRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
   const renderRef = useRef<Matter.Render | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]); // Anchor -> Div 변경
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const shapeBodiesRef = useRef<Matter.Body[]>([]);
+  const isExitingRef = useRef(isExiting);
+  const allFallenFiredRef = useRef(false);
+  const onAllFallenRef = useRef(onAllFallen);
+  isExitingRef.current = isExiting;
+  onAllFallenRef.current = onAllFallen;
   
   const [shapeProps, setShapeProps] = useState<{ color: string; size: number }[]>([]);
   const [hoveredLink, setHoveredLink] = useState<LinkItem | null>(null);
@@ -70,7 +81,6 @@ export function FallingShapes({ links }: FallingShapesProps) {
     const groundHeight = 100;
     const groundOffset = 120; // Shuffle 버튼 위 여유
     const wallThickness = 200;
-    const GROUND_CATEGORY = 0x0002;
 
     const ground = Bodies.rectangle(
       window.innerWidth / 2,
@@ -122,6 +132,8 @@ export function FallingShapes({ links }: FallingShapesProps) {
       shapeBodies.push(body);
       World.add(world, body);
     });
+
+    shapeBodiesRef.current = shapeBodies;
 
     // 마우스 인터랙션 설정
     const mouse = Mouse.create(render.canvas);
@@ -195,8 +207,9 @@ export function FallingShapes({ links }: FallingShapesProps) {
     Render.run(render);
     runnerRef.current = runner;
 
-    // 3초마다 제일 하단 원이 땅을 관통해 화면 밖으로 떨어지게 함
+    // 3초마다 제일 하단 원이 땅을 관통해 화면 밖으로 떨어지게 함 (테마 전환 중에는 스킵)
     const pushBottomAndRespawn = () => {
+      if (isExitingRef.current) return;
       const bottomBody = shapeBodies.reduce((a, b) =>
         a.position.y > b.position.y ? a : b
       );
@@ -224,8 +237,8 @@ export function FallingShapes({ links }: FallingShapesProps) {
           const rotation = body.angle;
           const radius = shapeProps[index].size;
 
-          // 화면 밖(아래)으로 나가면 최상단에서 리스폰 + 땅 충돌 복구
-          if (y > window.innerHeight + 400) {
+          // 화면 밖(아래)으로 나가면 최상단에서 리스폰 (Shuffle 전환 중에는 리스폰 안 함)
+          if (y > window.innerHeight + OFF_SCREEN_Y && !isExitingRef.current) {
             Matter.Body.setPosition(body, {
               x: Math.random() * (window.innerWidth - radius * 4) + radius * 2,
               y: -Math.random() * 800 - 200,
@@ -235,8 +248,8 @@ export function FallingShapes({ links }: FallingShapesProps) {
             body.collisionFilter.mask = 0xFFFFFFFF;
             body.collisionFilter.group = 0;
           }
-          // 좌우로 나갔을 때도 리스폰
-          else if (x < -500 || x > window.innerWidth + 500) {
+          // 좌우로 나갔을 때도 리스폰 (Shuffle 전환 중에는 스킵)
+          else if ((x < -500 || x > window.innerWidth + 500) && !isExitingRef.current) {
             Matter.Body.setPosition(body, {
               x: Math.random() * (window.innerWidth - radius * 4) + radius * 2,
               y: -Math.random() * 500 - 200,
@@ -252,6 +265,16 @@ export function FallingShapes({ links }: FallingShapesProps) {
           domElement.style.opacity = '1';
         }
       });
+
+      // Shuffle 전환 중: 모두 떨어졌으면 onAllFallen 콜백 (1회만)
+      if (isExitingRef.current && onAllFallenRef.current && !allFallenFiredRef.current) {
+        const allOffScreen = shapeBodies.every((b) => b.position.y > window.innerHeight + OFF_SCREEN_Y);
+        if (allOffScreen) {
+          allFallenFiredRef.current = true;
+          onAllFallenRef.current();
+        }
+      }
+
       animationId = requestAnimationFrame(updateDOM);
     };
     
@@ -283,7 +306,22 @@ export function FallingShapes({ links }: FallingShapesProps) {
       World.clear(world, false);
       Engine.clear(engine);
     };
-  }, [links, shapeProps]); 
+  }, [links, shapeProps]);
+
+  // Shuffle 테마 전환 시 모든 원 아래로 떨어지게
+  useEffect(() => {
+    if (!isExiting || shapeBodiesRef.current.length === 0) return;
+    allFallenFiredRef.current = false;
+
+    shapeBodiesRef.current.forEach((body) => {
+      body.collisionFilter.mask = 0xFFFFFFFF & ~GROUND_CATEGORY;
+      Matter.Body.setVelocity(body, {
+        x: (Math.random() - 0.5) * 6,
+        y: 8 + Math.random() * 6,
+      });
+      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
+    });
+  }, [isExiting]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });

@@ -6,7 +6,11 @@ import { LinkItem } from '@/data/links';
 
 interface FallingTextProps {
   links: LinkItem[];
+  isExiting?: boolean;
+  onAllFallen?: () => void;
 }
+
+const GROUND_CATEGORY = 0x0002;
 
 // 바이브코딩 컬러 팔레트 (형광/비비드) - Hex 코드
 const HOVER_COLORS = [
@@ -20,12 +24,20 @@ const HOVER_COLORS = [
   '#FF2D55', // Pink
 ];
 
-export function FallingText({ links }: FallingTextProps) {
+const OFF_SCREEN_Y = 500;
+
+export function FallingText({ links, isExiting = false, onAllFallen }: FallingTextProps) {
   const sceneRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
   const renderRef = useRef<Matter.Render | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const textBodiesRef = useRef<Matter.Body[]>([]);
+  const isExitingRef = useRef(isExiting);
+  const allFallenFiredRef = useRef(false);
+  const onAllFallenRef = useRef(onAllFallen);
+  isExitingRef.current = isExiting;
+  onAllFallenRef.current = onAllFallen;
 
   useEffect(() => {
     if (!sceneRef.current) return;
@@ -55,8 +67,7 @@ export function FallingText({ links }: FallingTextProps) {
     const groundHeight = 100;
     const groundOffset = 120; // Shuffle 버튼 위 여유
     const wallThickness = 200;
-    
-    const GROUND_CATEGORY = 0x0002;
+
     const ground = Bodies.rectangle(
       window.innerWidth / 2,
       window.innerHeight - groundOffset, 
@@ -113,6 +124,8 @@ export function FallingText({ links }: FallingTextProps) {
       World.add(world, body);
     });
 
+    textBodiesRef.current = textBodies;
+
     const mouse = Mouse.create(render.canvas);
     const mouseConstraint = MouseConstraint.create(engine, {
       mouse: mouse,
@@ -128,9 +141,9 @@ export function FallingText({ links }: FallingTextProps) {
     Render.run(render);
     runnerRef.current = runner;
 
-    // 3초마다 제일 하단 링크가 땅을 관통해 화면 밖으로 떨어지게 함
+    // 3초마다 제일 하단 링크가 땅을 관통해 화면 밖으로 떨어지게 함 (테마 전환 중에는 스킵)
     const pushBottomAndRespawn = () => {
-      // 제일 하단(body.position.y 최대) 링크 1개 찾기
+      if (isExitingRef.current) return;
       const bottomBody = textBodies.reduce((a, b) =>
         a.position.y > b.position.y ? a : b
       );
@@ -157,8 +170,8 @@ export function FallingText({ links }: FallingTextProps) {
           const { x, y } = body.position;
           const rotation = body.angle;
 
-          // 화면 밖(아래)으로 나가면 최상단에서 리스폰 + 땅 충돌 복구
-          if (y > window.innerHeight + 400) {
+          // 화면 밖(아래)으로 나가면 최상단에서 리스폰 (Shuffle 전환 중에는 리스폰 안 함)
+          if (y > window.innerHeight + OFF_SCREEN_Y && !isExitingRef.current) {
             const link = links[index];
             const charWidth = 70;
             const padding = 40;
@@ -169,7 +182,6 @@ export function FallingText({ links }: FallingTextProps) {
             });
             Matter.Body.setVelocity(body, { x: 0, y: 0 });
             Matter.Body.setAngle(body, (Math.random() - 0.5) * 0.5);
-            // 땅과 다시 충돌하도록 복구 (Matter.js 기본값)
             body.collisionFilter.category = 1;
             body.collisionFilter.mask = 0xFFFFFFFF;
             body.collisionFilter.group = 0;
@@ -179,6 +191,16 @@ export function FallingText({ links }: FallingTextProps) {
           domElement.style.opacity = '1';
         }
       });
+
+      // Shuffle 전환 중: 모두 떨어졌으면 onAllFallen 콜백 (1회만)
+      if (isExitingRef.current && onAllFallenRef.current && !allFallenFiredRef.current) {
+        const allOffScreen = textBodies.every((b) => b.position.y > window.innerHeight + OFF_SCREEN_Y);
+        if (allOffScreen) {
+          allFallenFiredRef.current = true;
+          onAllFallenRef.current();
+        }
+      }
+
       animationId = requestAnimationFrame(updateDOM);
     };
     
@@ -212,6 +234,21 @@ export function FallingText({ links }: FallingTextProps) {
       Engine.clear(engine);
     };
   }, [links]);
+
+  // Shuffle 테마 전환 시 모든 텍스트 아래로 떨어지게
+  useEffect(() => {
+    if (!isExiting || textBodiesRef.current.length === 0) return;
+    allFallenFiredRef.current = false;
+
+    textBodiesRef.current.forEach((body) => {
+      body.collisionFilter.mask = 0xFFFFFFFF & ~GROUND_CATEGORY;
+      Matter.Body.setVelocity(body, {
+        x: (Math.random() - 0.5) * 6,
+        y: 8 + Math.random() * 6,
+      });
+      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.08);
+    });
+  }, [isExiting]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
