@@ -46,8 +46,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 미완료 프로젝트는 메인에 노출하지 않고 별도로 관리합니다.
 
-- **로컬 확인**: `npm run dev` → `/experiments` 접속 → 링크 클릭으로 각 실험 페이지 확인
+- **로컬 확인**: `npm run dev` → `/ex` 접속 → 링크 클릭으로 각 실험 페이지 확인
 - **워크플로우**: [docs/EXPERIMENTS_WORKFLOW.md](docs/EXPERIMENTS_WORKFLOW.md) 참고
+
+## Deployment
+
+Deployed on Vercel (Team Scope).
 
 ## Documentation
 

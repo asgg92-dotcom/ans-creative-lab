@@ -49,6 +49,7 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
   const onAllFallenRef = useRef(onAllFallen);
   // hydration 방지: 마운트 후에만 window 사용 (서버/클라이언트 초기 렌더 일치)
   const [isMobile, setIsMobile] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   isExitingRef.current = isExiting;
   onAllFallenRef.current = onAllFallen;
 
@@ -59,7 +60,7 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
   useEffect(() => {
     if (!sceneRef.current || !wrapperRef.current) return;
 
-    const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint } = Matter;
+    const { Engine, Render, World, Bodies, Runner, Mouse, MouseConstraint, Events, Query } = Matter;
 
     const getBounds = () => {
       const rect = wrapperRef.current?.getBoundingClientRect();
@@ -96,6 +97,12 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
       },
     });
     renderRef.current = render;
+
+    render.canvas.style.position = 'absolute';
+    render.canvas.style.top = '0';
+    render.canvas.style.left = '0';
+    render.canvas.style.pointerEvents = 'auto';
+    render.canvas.style.zIndex = '10';
 
     const groundHeight = 100;
     const groundOffset = 120; // Shuffle 버튼 위 여유
@@ -167,6 +174,53 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
     });
     World.add(world, mouseConstraint);
 
+    let startPoint = { x: 0, y: 0 };
+    let isDragging = false;
+
+    Events.on(mouseConstraint, 'mousedown', () => {
+      const mousePosition = mouse.position;
+      startPoint = { x: mousePosition.x, y: mousePosition.y };
+      isDragging = false;
+    });
+
+    const updateHoverAndCursor = () => {
+      const mousePosition = mouse.position;
+      const hoveredBody = mouseConstraint.body || Query.point(textBodies, mousePosition)[0];
+      if (hoveredBody) {
+        const idx = parseInt(hoveredBody.label);
+        if (!isNaN(idx)) {
+          setHoveredIndex(idx);
+          render.canvas.style.cursor = mouseConstraint.body ? 'grabbing' : 'grab';
+        }
+      } else {
+        setHoveredIndex(null);
+        render.canvas.style.cursor = 'default';
+      }
+    };
+
+    Events.on(mouseConstraint, 'mousemove', () => {
+      const mousePosition = mouse.position;
+      const distance = Math.hypot(mousePosition.x - startPoint.x, mousePosition.y - startPoint.y);
+      if (distance > 5 && mouseConstraint.body) isDragging = true;
+      updateHoverAndCursor();
+    });
+
+    Events.on(engine, 'beforeUpdate', updateHoverAndCursor);
+
+    const handleMouseLeave = () => setHoveredIndex(null);
+    render.canvas.addEventListener('mouseleave', handleMouseLeave);
+
+    Events.on(mouseConstraint, 'mouseup', () => {
+      if (!isDragging) {
+        const clickedBody = Query.point(textBodies, mouse.position)[0];
+        if (clickedBody) {
+          const idx = parseInt(clickedBody.label);
+          const link = links[idx];
+          if (link) window.open(link.url, '_blank');
+        }
+      }
+    });
+
     const runner = Runner.create();
     Runner.run(runner, engine);
     Render.run(render);
@@ -175,6 +229,7 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
     // 3초마다 제일 하단 링크가 땅을 관통해 화면 밖으로 떨어지게 함 (테마 전환 중에는 스킵)
     const pushBottomAndRespawn = () => {
       if (isExitingRef.current) return;
+      if (mouseConstraint.body) return; // 드래그 중에는 멈춤
       const bottomBody = textBodies.reduce((a, b) =>
         a.position.y > b.position.y ? a : b
       );
@@ -268,6 +323,7 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
     return () => {
       clearInterval(intervalId);
       ro.disconnect();
+      render.canvas.removeEventListener('mouseleave', handleMouseLeave);
       if (animationId) cancelAnimationFrame(animationId);
       Render.stop(render);
       Runner.stop(runner);
@@ -295,7 +351,7 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
 
   return (
     <div ref={wrapperRef} className="relative w-full h-screen overflow-hidden bg-black">
-      <div ref={sceneRef} className="absolute inset-0 pointer-events-none opacity-0" />
+      <div ref={sceneRef} className="absolute inset-0 opacity-0 z-10" />
 
       {links.map((link, index) => {
         const hoverColor = HOVER_COLORS[index % HOVER_COLORS.length];
@@ -314,15 +370,10 @@ export function FallingText({ links, isExiting = false, onAllFallen }: FallingTe
               width: `${estimatedWidth}px`,
               height: `${dims.height}px`,
               opacity: 0,
-              pointerEvents: 'auto',
+              pointerEvents: 'none',
               willChange: 'transform',
               transformOrigin: '50% 50%',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = hoverColor;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = ''; 
+              color: hoveredIndex === index ? hoverColor : 'white',
             }}
           >
             {/* 모바일: 2.5rem, 데스크톱: 8rem (데스크톱 영향 없음) */}

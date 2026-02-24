@@ -8,19 +8,9 @@ export const metadata = {
 
 export default function ExperimentsPage() {
   return (
-    <main className="min-h-screen bg-black text-white p-8">
+    <main className="min-h-screen bg-black text-white pt-24 pb-8 px-8">
       <div className="max-w-2xl mx-auto">
-        <Link
-          href="/"
-          className="text-sm text-white/60 hover:text-white transition-colors mb-8 inline-block"
-        >
-          ← 메인으로
-        </Link>
-
-        <h1 className="text-2xl font-bold mb-2">실험 페이지</h1>
-        <p className="text-white/60 text-sm mb-8">
-          로컬에서 확인할 수 있는 미완료 프로젝트입니다.
-        </p>
+        <h1 className="text-2xl font-bold mb-8 text-center">실험 페이지</h1>
 
         {experiments.length === 0 ? (
           <p className="text-white/40">등록된 실험이 없습니다.</p>

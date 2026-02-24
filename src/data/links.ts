@@ -53,4 +53,13 @@ export const links: LinkItem[] = [
     tags: ['인터랙티브', '생명'],
     date: '2026-02-18',
   },
+  {
+    id: '5',
+    title: 'Circle Draw',
+    description: '드래그로 타원을 그리고, 물리 엔진으로 폭발하는 인터랙션',
+    url: '/projects/circle-draw',
+    category: 'Web',
+    tags: ['Matter.js', 'Canvas', 'Physics'],
+    date: '2026-02-24',
+  },
 ];

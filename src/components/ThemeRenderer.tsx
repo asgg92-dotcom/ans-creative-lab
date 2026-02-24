@@ -2,11 +2,25 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useTheme } from '@/context/ThemeContext';
 import { LinkItem } from '@/data/links';
-import { FallingText } from '@/components/themes/FallingText';
-import { FallingShapes } from '@/components/themes/FallingShapes';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const FallingText = dynamic(
+  () => import('@/components/themes/FallingText').then((m) => ({ default: m.FallingText })),
+  { ssr: false, loading: () => <div className="min-h-screen bg-black" /> }
+);
+
+const FallingShapes = dynamic(
+  () => import('@/components/themes/FallingShapes').then((m) => ({ default: m.FallingShapes })),
+  { ssr: false, loading: () => <div className="min-h-screen bg-black" /> }
+);
+
+const RapidCycle = dynamic(
+  () => import('@/components/themes/RapidCycle').then((m) => ({ default: m.RapidCycle })),
+  { ssr: false, loading: () => <div className="min-h-screen bg-black" /> }
+);
 
 interface ThemeRendererProps {
   links: LinkItem[];
@@ -67,6 +81,9 @@ export function ThemeRenderer({ links }: ThemeRendererProps) {
         )}
         {displayTheme === 'FallingShapes' && (
           <FallingShapes links={links} isExiting={isExiting} onAllFallen={handleAllFallen} />
+        )}
+        {displayTheme === 'RapidCycle' && (
+          <RapidCycle links={links} isExiting={isExiting} onAllFallen={handleAllFallen} />
         )}
       </motion.div>
     </AnimatePresence>

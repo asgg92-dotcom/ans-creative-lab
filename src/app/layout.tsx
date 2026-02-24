@@ -36,6 +36,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} antialiased`}
+        suppressHydrationWarning
       >
         <Providers>
           <CustomCursor />

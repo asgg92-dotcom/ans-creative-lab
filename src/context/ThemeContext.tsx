@@ -3,7 +3,7 @@
 import React, { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
 
 // 여기에 새로운 테마 ID를 계속 추가할 수 있습니다.
-export type ThemeType = 'FallingText' | 'FallingShapes'; 
+export type ThemeType = 'FallingText' | 'FallingShapes' | 'RapidCycle'; 
 
 interface ThemeContextType {
   currentTheme: ThemeType;
@@ -20,7 +20,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [currentTheme, setTheme] = useState<ThemeType>('FallingText');
   const [exitTransitionToTheme, setExitTransitionToTheme] = useState<ThemeType | null>(null);
-  const availableThemes: ThemeType[] = ['FallingText', 'FallingShapes'];
+  const availableThemes: ThemeType[] = ['FallingText', 'FallingShapes', 'RapidCycle'];
 
   const triggerExitTransition = useCallback((nextTheme: ThemeType) => {
     setExitTransitionToTheme((prev) => (prev ? prev : nextTheme));

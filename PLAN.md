@@ -6,7 +6,7 @@ Last Updated: 2026-02-18 (수) 15:30
 - 목표: 다양한 링크(포트폴리오, 작업물)를 모아서 보여주는 "살아 움직이는 미니멀 갤러리" 구축.
 - 핵심 컨셉: 바이브코딩 (역동적이고 감각적인 UI/UX).
 - 디자인: 미니멀 & 모던 (콘텐츠 중심).
-- 배포: Vercel (Team Scope) 고려.
+- 배포: Vercel (Team Scope) 완료.
 
 ## 2. 기술 스택 및 개발 환경
 - 프레임워크: Next.js 14+ (App Router)
@@ -18,7 +18,7 @@ Last Updated: 2026-02-18 (수) 15:30
   - Zdog.js
   - Matter.js (2D Physics)
 - 아이콘: Lucide React
-- 배포: Vercel
+- 배포: Vercel (완료)
 
 ## 3. 기능 명세 및 UI 구조
 
@@ -91,4 +91,4 @@ export interface LinkItem {
     - Project Beta (Lo-Fi Desk Widget)
     - Project Gamma (Reflective Abstract)
 - [x] Github 업로드: 원격 저장소 연결 및 Push 완료 <!-- id: github-push -->
-- [ ] 배포 준비: Vercel 배포 및 최종 점검 <!-- id: deploy-prep -->
+- [x] 배포 준비: Vercel 배포 및 최종 점검 <!-- id: deploy-prep -->

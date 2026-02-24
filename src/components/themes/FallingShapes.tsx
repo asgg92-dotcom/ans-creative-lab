@@ -247,6 +247,7 @@ export function FallingShapes({ links, isExiting = false, onAllFallen }: Falling
     // 3초마다 제일 하단 원이 땅을 관통해 화면 밖으로 떨어지게 함 (테마 전환 중에는 스킵)
     const pushBottomAndRespawn = () => {
       if (isExitingRef.current) return;
+      if (mouseConstraint.body) return; // 드래그 중에는 멈춤
       const bottomBody = shapeBodies.reduce((a, b) =>
         a.position.y > b.position.y ? a : b
       );
